@@ -186,6 +186,15 @@ namespace RockSnifferLib.RSHelpers
                             phraseIterationCounts[phrI.Name]++;
                         }
 
+                        // File for storing noteData information
+                        var songID = details.songID;
+                        var arrangementID = arrangement.PersistentID;
+                        var noteDataFile = songID + "_" + arrangementID + ".txt";
+                        if (File.Exists(noteDataFile))
+                        {
+                            File.Delete(noteDataFile);
+                        }
+
                         // Build a hash from the note data in each arrangement
                         var noteDataHash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
 
@@ -206,6 +215,110 @@ namespace RockSnifferLib.RSHelpers
                             {
                                 if (note.Time >= startTime && note.Time < endTime)
                                 {
+                                    if (arrangementID == "661E1D2FCE5C4284ADA4C1BB6A921DFC")
+                                    {
+                                        try
+                                        {
+                                            // Open a file for appending using StreamWriter
+                                            using (StreamWriter writer = new StreamWriter(noteDataFile, true))
+                                            {
+                                                // Update the arrangement hash with all note details
+                                                writer.Write("MASK: " + note.NoteMask + ", ");
+                                                writer.Write("FLAGS: " + note.NoteFlags + ", ");
+                                                writer.Write("TIME: " + (float)Math.Round(note.Time, 3) + ", ");
+
+                                                // Ignore note.Hash because it can differ even when there is no
+                                                // discernable difference between notes
+                                                //noteDataHash.AppendData(BitConverter.GetBytes(note.Hash));
+
+                                                writer.Write("STRING INDEX: " + note.StringIndex + ", ");
+                                                writer.Write("FRET ID: " + note.FretId + ", ");
+                                                writer.Write("ANCHOR FRET ID: " + note.AnchorFretId + ", ");
+                                                writer.Write("ANCHOR WIDTH: " + note.AnchorWidth + ", ");
+
+                                                // Ignore note.ChordId because it can differ even when there is
+                                                // no discernable difference between notes
+                                                //noteDataHash.AppendData(BitConverter.GetBytes(note.ChordId));
+
+                                                // Ignore note.ChordNotesId (these are processed later)
+                                                //noteDataHash.AppendData(BitConverter.GetBytes(note.ChordNotesId);
+
+                                                writer.Write("PHRASE ID: " + note.PhraseId + ", ");
+                                                writer.Write("PHRASE ITERATION ID: " + note.PhraseIterationId + ", ");
+
+                                                int i = 0;
+                                                foreach (var fingerPrintId in note.FingerPrintId)
+                                                {
+                                                    writer.Write("FINGERPRINT ID " + i + ": " + fingerPrintId + ", ");
+                                                }
+
+                                                writer.Write("NEXT ITER NOTE: " + note.NextIterNote + ", ");
+                                                writer.Write("PREV ITER NOTE: " + note.PrevIterNote + ", ");
+                                                writer.Write("PARENT PREV NOTE: " + note.ParentPrevNote + ", ");
+                                                writer.Write("SLIDE TO: " + note.SlideTo + ", ");
+                                                writer.Write("SLIDE UNPITCH TO: " + note.SlideUnpitchTo + ", ");
+                                                writer.Write("LEFT HAND: " + note.LeftHand + ", ");
+                                                writer.Write("TAP: " + note.Tap + ", ");
+                                                writer.Write("PICK DIRECTION: " + note.PickDirection + ", ");
+                                                writer.Write("SLAP: " + note.Slap + ", ");
+                                                writer.Write("PLUCK: " + note.Pluck + ", ");
+                                                writer.Write("VIBRATO: " + note.Vibrato + ", ");
+                                                writer.Write("SUSTAIN: " + (float)Math.Round(note.Sustain) + ", ");
+                                                writer.Write("MAX BEND: " + (float)Math.Round(note.MaxBend) + ", ");
+
+                                                foreach (var bendData in note.BendData)
+                                                {
+                                                    writer.Write("BEND TIME: " + (float)Math.Round(bendData.Time) + ", ");
+                                                    writer.Write("BEND STEP: " + (float)Math.Round(bendData.Step) + ", ");
+                                                    writer.Write("BEND UNK3_0: " + bendData.Unk3_0 + ", ");
+                                                    writer.Write("BEND UNK4_0: " + bendData.Unk4_0 + ", ");
+                                                    writer.Write("BEND UNK5: " + bendData.Unk5 + "\n");
+                                                }
+
+                                                if (note.FretId == 255)
+                                                {
+                                                    var chordNotesID = note.ChordNotesId;
+                                                    if (chordNotesID != -1)
+                                                    {
+                                                        var chordNotes = arrangementSng.ChordNotes[chordNotesID];
+                                                        for (var j = 0; j < chordNotes.NoteMask.Length; j++)
+                                                        {
+                                                            var noteMask = chordNotes.NoteMask[j];
+                                                            var bendData = chordNotes.BendData[j];
+                                                            var slideTo = chordNotes.SlideTo[j];
+                                                            var slideUnpitchTo = chordNotes.SlideUnpitchTo[j];
+                                                            var vibrato = chordNotes.Vibrato[j];
+
+                                                            writer.Write("\tCHORDNOTE " + j + " MASK: " + noteMask + ", ");
+                                                            foreach (var bendData32 in bendData.BendData32)
+                                                            {
+                                                                writer.Write("BEND TIME: " + (float)Math.Round(bendData32.Time) + ", ");
+                                                                writer.Write("BEND STEP: " + (float)Math.Round(bendData32.Step) + ", ");
+                                                                writer.Write("BEND UNK3_0: " + bendData32.Unk3_0 + ", ");
+                                                                writer.Write("BEND UNK4_0: " + bendData32.Unk4_0 + ", ");
+                                                                writer.Write("BEND UNK5: " + bendData32.Unk5 + ", ");
+                                                            }
+                                                            writer.Write("BENDDATA USED COUNT: " + bendData.UsedCount + ", ");
+
+                                                            writer.Write("SLIDE TO: " + slideTo + ", ");
+                                                            writer.Write("SLIDE UNPITCH TO: " + slideUnpitchTo + ", ");
+                                                            writer.Write("VIBRATO: " + vibrato + "\n");
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    writer.Write('\n');
+                                                }
+                                                writer.Flush();
+                                            }
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Console.WriteLine("An error occurred: " + ex.Message);
+                                        }
+                                    }
+
                                     // Update the arrangement hash with all note details
                                     noteDataHash.AppendData(BitConverter.GetBytes(note.NoteMask));
                                     noteDataHash.AppendData(BitConverter.GetBytes(note.NoteFlags));
