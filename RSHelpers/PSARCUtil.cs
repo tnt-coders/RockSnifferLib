@@ -471,7 +471,7 @@ namespace RockSnifferLib.RSHelpers
                                     noteDataHash.AppendData(BitConverter.GetBytes(note.Pluck));
                                     noteDataHash.AppendData(BitConverter.GetBytes(note.Vibrato));
                                     noteDataHash.AppendData(BitConverter.GetBytes((float)Math.Round(note.Sustain, 3)));
-                                    noteDataHash.AppendData(BitConverter.GetBytes((float)Math.Round(note.MaxBend)));
+                                    noteDataHash.AppendData(BitConverter.GetBytes((float)Math.Round(note.MaxBend, 3)));
 
                                     foreach (var bendData in note.BendData)
                                     {
